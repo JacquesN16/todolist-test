@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskList } from '../entities/TaskList.entity';
@@ -12,6 +12,10 @@ export class TaskListService {
   ) {}
 
   async create(createTaskListDto: CreateTaskListDto, ownerId: number): Promise<TaskList> {
+    const existingTaskList = await this.taskListRepository.findOne({ where: { name: createTaskListDto.name, ownerId } });
+    if (existingTaskList) {
+      throw new BadRequestException('Task list with this name already exists.');
+    }
     const taskList = this.taskListRepository.create({ ...createTaskListDto, ownerId });
     return this.taskListRepository.save(taskList);
   }
