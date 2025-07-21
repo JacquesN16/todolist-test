@@ -9,11 +9,11 @@ export class CreateTaskListDto {
 export class CreateTaskDto {
   @IsString()
   @IsNotEmpty()
-  shortDescription!: string;
+  title!: string;
 
   @IsString()
   @IsOptional()
-  longDescription?: string;
+  description?: string;
 
   @IsDateString()
   @IsNotEmpty()
@@ -30,11 +30,11 @@ export class UpdateTaskDto {
 
   @IsString()
   @IsOptional()
-  shortDescription?: string;
+  title?: string;
 
   @IsString()
   @IsOptional()
-  longDescription?: string;
+  description?: string;
 
   @IsDateString()
   @IsOptional()

@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { TaskList as ITaskList } from 'todolist-model';
+import { Task } from './Task.entity';
 
 @Entity()
 export class TaskList implements ITaskList {
@@ -11,6 +12,9 @@ export class TaskList implements ITaskList {
 
   @Column()
   ownerId: number;
+
+  @OneToMany(() => Task, task => task.taskList, { cascade: true })
+  tasks: Task[];
 
   @CreateDateColumn()
   createdAt: Date;

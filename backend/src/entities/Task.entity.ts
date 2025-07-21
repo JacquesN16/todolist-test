@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Task as ITask } from 'todolist-model';
+import { TaskList } from './TaskList.entity';
 
 @Entity()
 export class Task implements ITask {
@@ -20,6 +21,10 @@ export class Task implements ITask {
 
   @Column()
   listId: number;
+
+  @ManyToOne(() => TaskList, taskList => taskList.tasks)
+  @JoinColumn({ name: 'listId' })
+  taskList: TaskList;
 
   @Column()
   ownerId: number;
