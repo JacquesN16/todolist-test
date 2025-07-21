@@ -6,10 +6,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/User.entity';
 import { Task } from './entities/Task.entity';
 import { TaskList } from './entities/TaskList.entity';
+import { TaskListModule } from './task-list/task-list.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
     AuthModule,
+    TaskListModule,
+    TaskModule,
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'db.sqlite',
