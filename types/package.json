@@ -1,0 +1,29 @@
+{
+  "name": "todolist-model",
+  "version": "0.0.0",
+  "description": "The Typescript model of todolist",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf dist && rm -f vite.config.js && npm run generate-index && npx tsc && npx vite build"
+  },
+  "devDependencies": {
+    "vite": "4.2.1",
+    "vite-plugin-dts": "2.1.0",
+    "typescript": "4.9.4"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/todolist-model.umd.js",
+  "module": "./dist/todolist-model.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/kadow-jetpack-model.es.js",
+      "require": "./dist/kadow-jetpack-model.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "author": "JacquesNguyen",
+  "license": "ISC"
+}
