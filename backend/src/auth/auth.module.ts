@@ -17,7 +17,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
       inject: [ConfigService],
     }),
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: './backend/.env' }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: './.env' }),
   ],
   controllers: [AuthController],
   providers: [AuthService],
