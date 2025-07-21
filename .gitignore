@@ -1,2 +1,10 @@
-/node_modules
-package-lock.json
+types/node_modules
+types/package-lock.json
+types/dist
+
+backend/node_modules
+backend/dist
+backend/package-lock.json
+
+frontend/node_modules
+frontend/package-lock.json
