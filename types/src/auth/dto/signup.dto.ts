@@ -2,13 +2,13 @@ import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validato
 
 export class SignupDto {
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
@@ -16,10 +16,10 @@ export class SignupDto {
   @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
     message: 'Password too weak',
   })
-  password: string;
+  password!: string;
 
   @IsString()
   @MinLength(8)
   @MaxLength(30)
-  confirmPassword: string;
+  confirmPassword!: string;
 }
