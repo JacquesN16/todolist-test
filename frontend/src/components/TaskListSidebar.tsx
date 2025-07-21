@@ -14,6 +14,7 @@ interface TaskListSidebarProps {
   taskListToDelete: TaskList | null;
   confirmDeleteTaskList: () => Promise<void>;
   setShowDeleteTaskListModal: (show: boolean) => void;
+  handleLogout: () => void;
 }
 
 const TaskListSidebar: React.FC<TaskListSidebarProps> = ({
@@ -28,36 +29,42 @@ const TaskListSidebar: React.FC<TaskListSidebarProps> = ({
   taskListToDelete,
   confirmDeleteTaskList,
   setShowDeleteTaskListModal,
+  handleLogout,
 }) => {
   return (
     <>
-      <h5>Task Lists</h5>
-      <InputGroup className="mb-3">
-        <Form.Control
-          placeholder="New list name"
-          value={newTaskListName}
-          onChange={(e) => setNewTaskListName(e.target.value)}
-        />
-        <Button variant="outline-secondary" onClick={handleCreateTaskList}>
-          ➕
+      <div className="d-flex flex-column h-100">
+        <h5 className="text-white">Task Lists</h5>
+        <InputGroup className="mb-3">
+          <Form.Control
+            placeholder="New list name"
+            value={newTaskListName}
+            onChange={(e) => setNewTaskListName(e.target.value)}
+          />
+          <Button variant="outline-secondary" onClick={handleCreateTaskList}>
+            ➕
+          </Button>
+        </InputGroup>
+        <ListGroup className="flex-grow-1 overflow-auto mb-3">
+          {taskLists.map((list) => (
+            <ListGroup.Item
+              key={list.id}
+              action
+              active={list.id === selectedTaskListId}
+              onClick={() => setSelectedTaskListId(list.id)}
+              className="d-flex justify-content-between align-items-center"
+            >
+              {list.name}
+              <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteTaskList(list); }}>
+                Delete
+              </Button>
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+        <Button variant="danger" className="w-100 mt-auto" onClick={handleLogout}>
+          Disconnect
         </Button>
-      </InputGroup>
-      <ListGroup>
-        {taskLists.map((list) => (
-          <ListGroup.Item
-            key={list.id}
-            action
-            active={list.id === selectedTaskListId}
-            onClick={() => setSelectedTaskListId(list.id)}
-            className="d-flex justify-content-between align-items-center"
-          >
-            {list.name}
-            <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteTaskList(list); }}>
-              Delete
-            </Button>
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
+      </div>
 
       {/* Delete Task List Confirmation Modal */}
       <Modal show={showDeleteTaskListModal} onHide={() => setShowDeleteTaskListModal(false)}>
