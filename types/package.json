@@ -4,12 +4,14 @@
   "description": "The Typescript model of todolist",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf dist && rm -f vite.config.js && npm run generate-index && npx tsc && npx vite build"
+    "build": "rm -rf dist && rm -f vite.config.js && npm run generate-index && npx tsc && npx vite build",
+    "generate-index": "npx ctix single -w -o ./src/index.ts --startAt ./src --noBackup"
   },
   "devDependencies": {
     "vite": "4.2.1",
     "vite-plugin-dts": "2.1.0",
-    "typescript": "4.9.4"
+    "typescript": "4.9.4",
+    "ctix": "1.8.2"
   },
   "files": [
     "dist"
