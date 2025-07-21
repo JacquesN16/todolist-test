@@ -1,36 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button, Form, ListGroup, InputGroup, Modal } from 'react-bootstrap';
+import { useAuth } from '../context/AuthContext';
+import { type TaskList, type Task} from 'todolist-model';
 
-interface TaskList {
-  id: string;
-  name: string;
-}
-
-interface Task {
-  id: string;
-  shortDescription: string;
-  longDescription?: string;
-  dueDate: string;
-  createdAt: string;
-  completed: boolean;
-}
+const API_BASE_URL = 'http://localhost:3000';
 
 const MainPage: React.FC = () => {
-  const [taskLists, setTaskLists] = useState<TaskList[]>([
-    { id: '1', name: 'My Daily Tasks' },
-    { id: '2', name: 'Work Projects' },
-  ]);
-  const [selectedTaskListId, setSelectedTaskListId] = useState<string | null>(taskLists[0]?.id || null);
+  const [taskLists, setTaskLists] = useState<TaskList[]>([]);
+  const [selectedTaskListId, setSelectedTaskListId] = useState<number | null>(null);
   const [newTaskListName, setNewTaskListName] = useState<string>('');
 
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 't1', shortDescription: 'Buy groceries', dueDate: '2025-07-22', createdAt: '2025-07-21', completed: false },
-    { id: 't2', shortDescription: 'Finish report', longDescription: 'Complete the Q3 financial report', dueDate: '2025-07-25', createdAt: '2025-07-20', completed: false },
-    { id: 't3', shortDescription: 'Call John', dueDate: '2025-07-21', createdAt: '2025-07-19', completed: true },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [newTaskShortDescription, setNewTaskShortDescription] = useState<string>('');
-  const [newTaskLongDescription, setNewTaskLongDescription] = useState<string>('');
+  const [newTaskTitle, setNewTaskTitle] = useState<string>('');
+  const [newTaskDescription, setNewTaskDescription] = useState<string>('');
   const [newTaskDueDate, setNewTaskDueDate] = useState<string>('');
 
   const [showDeleteTaskListModal, setShowDeleteTaskListModal] = useState<boolean>(false);
@@ -39,16 +22,88 @@ const MainPage: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [showCompletedTasks, setShowCompletedTasks] = useState<boolean>(false);
 
+  const { accessToken } = useAuth();
+
+  const fetchTaskLists = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/task-lists`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch task lists');
+      }
+      const data: TaskList[] = await response.json();
+      setTaskLists(data);
+      if (data.length > 0 && !selectedTaskListId) {
+        setSelectedTaskListId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching task lists:', error);
+    }
+  };
+
+  const fetchTasks = async (listId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/list/${listId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+      const data: Task[] = await response.json();
+      setTasks(data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (accessToken) {
+      fetchTaskLists();
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (selectedTaskListId) {
+      fetchTasks(selectedTaskListId);
+    } else {
+      setTasks([]);
+    }
+  }, [selectedTaskListId]);
+
   const activeTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
 
-  const handleCreateTaskList = () => {
-    if (newTaskListName.trim() && !taskLists.some(list => list.name === newTaskListName.trim())) {
-      const newId = String(taskLists.length + 1);
-      setTaskLists([...taskLists, { id: newId, name: newTaskListName.trim() }]);
-      setNewTaskListName('');
+  const handleCreateTaskList = async () => {
+    if (newTaskListName.trim()) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/task-lists`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ name: newTaskListName.trim() }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create task list');
+        }
+        setNewTaskListName('');
+        fetchTaskLists(); // Refresh task lists
+      } catch (error) {
+        console.error('Error creating task list:', error);
+        if(error){
+          alert(`${error?.message}  Please try again.`);
+        }
+
+      }
     } else {
-      alert('Task list name cannot be empty or already exists.');
+      alert('Task list name cannot be empty.');
     }
   };
 
@@ -57,41 +112,79 @@ const MainPage: React.FC = () => {
     setShowDeleteTaskListModal(true);
   };
 
-  const confirmDeleteTaskList = () => {
+  const confirmDeleteTaskList = async () => {
     if (taskListToDelete) {
-      setTaskLists(taskLists.filter(list => list.id !== taskListToDelete.id));
-      setTasks(tasks);
-      setSelectedTaskListId(null);
-      setShowDeleteTaskListModal(false);
-      setTaskListToDelete(null);
+      try {
+        const response = await fetch(`${API_BASE_URL}/task-lists/${taskListToDelete.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete task list');
+        }
+        setShowDeleteTaskListModal(false);
+        setTaskListToDelete(null);
+        setSelectedTaskListId(null); // Deselect the deleted list
+        fetchTaskLists(); // Refresh task lists
+      } catch (error) {
+        console.error('Error deleting task list:', error);
+        alert('Failed to delete task list. Please try again.');
+      }
     }
   };
 
-  const handleCreateTask = () => {
-    if (newTaskShortDescription.trim() && newTaskDueDate.trim()) {
-      const newId = `t${tasks.length + 1}`;
-      const now = new Date().toISOString().split('T')[0];
-      setTasks([
-        ...tasks,
-        {
-          id: newId,
-          shortDescription: newTaskShortDescription.trim(),
-          longDescription: newTaskLongDescription.trim() || undefined,
-          dueDate: newTaskDueDate.trim(),
-          createdAt: now,
-          completed: false,
-        },
-      ]);
-      setNewTaskShortDescription('');
-      setNewTaskLongDescription('');
-      setNewTaskDueDate('');
+  const handleCreateTask = async () => {
+    if (newTaskTitle.trim() && newTaskDueDate.trim() && selectedTaskListId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/tasks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            title: newTaskTitle.trim(),
+            description: newTaskDescription.trim() || undefined,
+            dueDate: newTaskDueDate.trim(),
+            listId: selectedTaskListId,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to create task');
+        }
+        setNewTaskTitle('');
+        setNewTaskDescription('');
+        setNewTaskDueDate('');
+        fetchTasks(selectedTaskListId); // Refresh tasks for the current list
+      } catch (error) {
+        console.error('Error creating task:', error);
+        alert('Failed to create task. Please try again.');
+      }
     } else {
-      alert('Short description and due date are required for a new task.');
+      alert('Short description, due date, and a selected task list are required for a new task.');
     }
   };
 
-  const handleToggleTaskComplete = (id: string) => {
-    setTasks(tasks.map(task => (task.id === id ? { ...task, completed: !task.completed } : task)));
+  const handleToggleTaskComplete = async (task: Task) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ completed: !task.completed }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update task status');
+      }
+      fetchTasks(selectedTaskListId!); // Refresh tasks
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      alert('Failed to update task status. Please try again.');
+    }
   };
 
   const handleDeleteTask = (task: Task) => {
@@ -99,12 +192,26 @@ const MainPage: React.FC = () => {
     setShowDeleteTaskModal(true);
   };
 
-  const confirmDeleteTask = () => {
-    if (taskToDelete) {
-      setTasks(tasks.filter(task => task.id !== taskToDelete.id));
-      setSelectedTask(null);
-      setShowDeleteTaskModal(false);
-      setTaskToDelete(null);
+  const confirmDeleteTask = async () => {
+    if (taskToDelete && selectedTaskListId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/tasks/${taskToDelete.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete task');
+        }
+        setShowDeleteTaskModal(false);
+        setTaskToDelete(null);
+        setSelectedTask(null); // Deselect the deleted task
+        fetchTasks(selectedTaskListId); // Refresh tasks
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        alert('Failed to delete task. Please try again.');
+      }
     }
   };
 
@@ -153,8 +260,8 @@ const MainPage: React.FC = () => {
                   <Form.Control
                     type="text"
                     placeholder="Enter short description"
-                    value={newTaskShortDescription}
-                    onChange={(e) => setNewTaskShortDescription(e.target.value)}
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
                     required
                   />
                 </Form.Group>
@@ -164,8 +271,8 @@ const MainPage: React.FC = () => {
                     as="textarea"
                     rows={3}
                     placeholder="Enter long description"
-                    value={newTaskLongDescription}
-                    onChange={(e) => setNewTaskLongDescription(e.target.value)}
+                    value={newTaskDescription}
+                    onChange={(e) => setNewTaskDescription(e.target.value)}
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
@@ -191,8 +298,8 @@ const MainPage: React.FC = () => {
                     onClick={() => setSelectedTask(task)}
                     className="d-flex justify-content-between align-items-center"
                   >
-                    {task.shortDescription} (Due: {task.dueDate})
-                    <Button variant="success" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task.id); }}>
+                    {task.title} (Due: {new Date(task.dueDate).toLocaleDateString()})
+                    <Button variant="success" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task); }}>
                       Mark Complete
                     </Button>
                   </ListGroup.Item>
@@ -213,8 +320,8 @@ const MainPage: React.FC = () => {
                       onClick={() => setSelectedTask(task)}
                       className="d-flex justify-content-between align-items-center text-muted"
                     >
-                      <del>{task.shortDescription} (Due: {task.dueDate})</del>
-                      <Button variant="warning" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task.id); }}>
+                      <del>{task.title} (Due: {new Date(task.dueDate).toLocaleDateString()})</del>
+                      <Button variant="warning" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task); }}>
                         Mark Incomplete
                       </Button>
                     </ListGroup.Item>
@@ -231,10 +338,10 @@ const MainPage: React.FC = () => {
         {selectedTask && (
           <Col md={3} className="bg-light border-start p-3">
             <h5>Task Details</h5>
-            <h6>{selectedTask.shortDescription}</h6>
-            <p><strong>Long Description:</strong> {selectedTask.longDescription || 'N/A'}</p>
-            <p><strong>Due Date:</strong> {selectedTask.dueDate}</p>
-            <p><strong>Created At:</strong> {selectedTask.createdAt}</p>
+            <h6>{selectedTask.title}</h6>
+            <p><strong>Long Description:</strong> {selectedTask.description || 'N/A'}</p>
+            <p><strong>Due Date:</strong> {new Date(selectedTask.dueDate).toLocaleDateString()}</p>
+            <p><strong>Created At:</strong> {new Date(selectedTask.createdAt).toLocaleDateString()}</p>
             <Button variant="danger" onClick={() => handleDeleteTask(selectedTask)}>
               Delete Task
             </Button>
@@ -266,7 +373,7 @@ const MainPage: React.FC = () => {
           <Modal.Title>Confirm Deletion</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete the task "{taskToDelete?.shortDescription}"?
+          Are you sure you want to delete the task "{taskToDelete?.title}"?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteTaskModal(false)}>
