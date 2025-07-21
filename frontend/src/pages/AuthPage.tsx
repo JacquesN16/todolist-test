@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { SignupDto, LoginDto } from 'todolist-model';
 import {AUTH_API} from "../helper/constant.ts";
+import FormControlGroup from '../components/FormControlGroup';
 
 const loginUser = async (data: LoginDto) => {
   const response = await fetch(`${AUTH_API}/login`, {
@@ -49,7 +50,6 @@ const AuthPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,84 +106,74 @@ const AuthPage: React.FC = () => {
               <Form onSubmit={handleSubmit}>
                 {!isLogin && (
                   <>
-                    <Form.Group className="mb-3" controlId="formFirstName">
-                      <Form.Label>First Name</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter first name"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                      />
-                    </Form.Group>
-                    <Form.Group className="mb-3" controlId="formLastName">
-                      <Form.Label>Last Name</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter last name"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                      />
-                    </Form.Group>
+                    <FormControlGroup
+                      controlId="formFirstName"
+                      label="First Name"
+                      type="text"
+                      placeholder="Enter first name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                    <FormControlGroup
+                      controlId="formLastName"
+                      label="Last Name"
+                      type="text"
+                      placeholder="Enter last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
                   </>
                 )}
-                <Form.Group className="mb-3" controlId="formBasicEmail">
-                  <Form.Label>Email address</Form.Label>
-                  <Form.Control
+                <FormControlGroup
+                  controlId="formBasicEmail"
+                  label="Email address"
+                  type="email"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+
+                {!isLogin && (
+                  <FormControlGroup
+                    controlId="formConfirmEmail"
+                    label="Confirm Email"
                     type="email"
-                    placeholder="Enter email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Confirm email"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
                     required
                   />
-                </Form.Group>
-
-                {!isLogin && (
-                  <Form.Group className="mb-3" controlId="formConfirmEmail">
-                    <Form.Label>Confirm Email</Form.Label>
-                    <Form.Control
-                      type="email"
-                      placeholder="Confirm email"
-                      value={confirmEmail}
-                      onChange={(e) => setConfirmEmail(e.target.value)}
-                      required
-                    />
-                  </Form.Group>
                 )}
 
-                <Form.Group className="mb-3" controlId="formBasicPassword">
-                  <Form.Label>Password</Form.Label>
-                  <InputGroup>
-                    <Form.Control
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                    <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? 'Hide' : 'Show'}
-                    </Button>
-                  </InputGroup>
-                </Form.Group>
+                <FormControlGroup
+                  controlId="formBasicPassword"
+                  label="Password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  showPasswordToggle
+                  onTogglePasswordVisibility={() => setShowPassword(!showPassword)}
+                  isPasswordVisible={showPassword}
+                />
 
                 {!isLogin && (
-                  <Form.Group className="mb-3" controlId="formConfirmPassword">
-                    <Form.Label>Confirm Password</Form.Label>
-                    <InputGroup>
-                      <Form.Control
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Confirm Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                      />
-                      <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? 'Hide' : 'Show'}
-                      </Button>
-                    </InputGroup>
-                  </Form.Group>
+                  <FormControlGroup
+                    controlId="formConfirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    showPasswordToggle
+                    onTogglePasswordVisibility={() => setShowPassword(!showPassword)}
+                    isPasswordVisible={showPassword}
+                  />
                 )}
 
                 <Button variant="primary" type="submit" className="w-100 mt-3">

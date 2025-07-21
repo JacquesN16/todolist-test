@@ -26,7 +26,7 @@ const MainPage: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [showCompletedTasks, setShowCompletedTasks] = useState<boolean>(false);
 
-  const { accessToken } = useAuth();
+  const { accessToken, logout } = useAuth();
 
   const fetchTaskLists = async () => {
     try {
@@ -244,6 +244,7 @@ const MainPage: React.FC = () => {
             taskListToDelete={taskListToDelete}
             confirmDeleteTaskList={confirmDeleteTaskList}
             setShowDeleteTaskListModal={setShowDeleteTaskListModal}
+            handleLogout={logout}
           />
         </Col>
 

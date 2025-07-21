@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, type ReactNode } from 'react';
 import { type User } from 'todolist-model';
+import {useNavigate} from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
@@ -13,7 +14,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem('accessToken'));
-
+  const navigate = useNavigate()
 
   const login = (token: string) => {
     setAccessToken(token);
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAccessToken(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
+    navigate('/auth/')
   };
 
   return (
