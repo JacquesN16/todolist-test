@@ -128,7 +128,7 @@ const MainContent: React.FC<MainContentProps> = ({
           )}
         </>
       ) : (
-        <h2 className='text-white'>Select a task list or create a new one.</h2>
+        <h2 className='text-white'>No task yet. Select a task list or create a new one.</h2>
       )}
 
 
