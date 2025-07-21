@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Form, ListGroup, InputGroup, Modal } from 'react-bootstrap';
+import { Container, Row, Col } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import { type TaskList, type Task} from 'todolist-model';
+import { type TaskList, type Task } from 'todolist-model';
+
+import TaskListSidebar from '../components/TaskListSidebar';
+import MainContent from '../components/MainContent';
+import TaskDetailsSidebar from '../components/TaskDetailsSidebar';
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -68,15 +72,13 @@ const MainPage: React.FC = () => {
   }, [accessToken]);
 
   useEffect(() => {
+    setSelectedTask(null)
     if (selectedTaskListId) {
       fetchTasks(selectedTaskListId);
     } else {
       setTasks([]);
     }
   }, [selectedTaskListId]);
-
-  const activeTasks = tasks.filter(task => !task.completed);
-  const completedTasks = tasks.filter(task => task.completed);
 
   const handleCreateTaskList = async () => {
     if (newTaskListName.trim()) {
@@ -94,7 +96,7 @@ const MainPage: React.FC = () => {
           throw new Error(errorData.message || 'Failed to create task list');
         }
         setNewTaskListName('');
-        fetchTaskLists(); // Refresh task lists
+        fetchTaskLists();
       } catch (error) {
         console.error('Error creating task list:', error);
         if(error){
@@ -126,11 +128,14 @@ const MainPage: React.FC = () => {
         }
         setShowDeleteTaskListModal(false);
         setTaskListToDelete(null);
-        setSelectedTaskListId(null); // Deselect the deleted list
-        fetchTaskLists(); // Refresh task lists
+        setSelectedTaskListId(null);
+        fetchTaskLists();
       } catch (error) {
         console.error('Error deleting task list:', error);
-        alert('Failed to delete task list. Please try again.');
+        if(error){
+          alert(`${error.message}. Please try again.`);
+        }
+
       }
     }
   };
@@ -160,7 +165,10 @@ const MainPage: React.FC = () => {
         fetchTasks(selectedTaskListId); // Refresh tasks for the current list
       } catch (error) {
         console.error('Error creating task:', error);
-        alert('Failed to create task. Please try again.');
+        if(error){
+          alert(`${error.message}. Please try again.`);
+        }
+
       }
     } else {
       alert('Short description, due date, and a selected task list are required for a new task.');
@@ -183,7 +191,9 @@ const MainPage: React.FC = () => {
       fetchTasks(selectedTaskListId!); // Refresh tasks
     } catch (error) {
       console.error('Error updating task status:', error);
-      alert('Failed to update task status. Please try again.');
+      if(error){
+        alert(`${error.message}. Please try again.`);
+      }
     }
   };
 
@@ -210,7 +220,9 @@ const MainPage: React.FC = () => {
         fetchTasks(selectedTaskListId); // Refresh tasks
       } catch (error) {
         console.error('Error deleting task:', error);
-        alert('Failed to delete task. Please try again.');
+        if(error){
+          alert(`${error.message}. Please try again.`);
+        }
       }
     }
   };
@@ -220,170 +232,56 @@ const MainPage: React.FC = () => {
       <Row className="h-100">
         {/* Left Sidebar */}
         <Col md={3} className="bg-light border-end p-3">
-          <h5>Task Lists</h5>
-          <InputGroup className="mb-3">
-            <Form.Control
-              placeholder="New list name"
-              value={newTaskListName}
-              onChange={(e) => setNewTaskListName(e.target.value)}
-            />
-            <Button variant="outline-secondary" onClick={handleCreateTaskList}>
-              Add List
-            </Button>
-          </InputGroup>
-          <ListGroup>
-            {taskLists.map((list) => (
-              <ListGroup.Item
-                key={list.id}
-                action
-                active={list.id === selectedTaskListId}
-                onClick={() => setSelectedTaskListId(list.id)}
-                className="d-flex justify-content-between align-items-center"
-              >
-                {list.name}
-                <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteTaskList(list); }}>
-                  Delete
-                </Button>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          <TaskListSidebar
+            taskLists={taskLists}
+            selectedTaskListId={selectedTaskListId}
+            newTaskListName={newTaskListName}
+            setNewTaskListName={setNewTaskListName}
+            handleCreateTaskList={handleCreateTaskList}
+            handleDeleteTaskList={handleDeleteTaskList}
+            setSelectedTaskListId={setSelectedTaskListId}
+            showDeleteTaskListModal={showDeleteTaskListModal}
+            taskListToDelete={taskListToDelete}
+            confirmDeleteTaskList={confirmDeleteTaskList}
+            setShowDeleteTaskListModal={setShowDeleteTaskListModal}
+          />
         </Col>
 
         {/* Main Content */}
         <Col md={selectedTask ? 6 : 9} className="p-3">
-          {selectedTaskListId ? (
-            <>
-              <h5>Tasks in {taskLists.find(list => list.id === selectedTaskListId)?.name}</h5>
-              <Form className="mb-4">
-                <Form.Group className="mb-2">
-                  <Form.Label>Short Description</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter short description"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-2">
-                  <Form.Label>Long Description (Optional)</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    placeholder="Enter long description"
-                    value={newTaskDescription}
-                    onChange={(e) => setNewTaskDescription(e.target.value)}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Due Date</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={newTaskDueDate}
-                    onChange={(e) => setNewTaskDueDate(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-                <Button variant="primary" onClick={handleCreateTask}>
-                  Add Task
-                </Button>
-              </Form>
-
-              <h6>Active Tasks</h6>
-              <ListGroup className="mb-3">
-                {activeTasks.map(task => (
-                  <ListGroup.Item
-                    key={task.id}
-                    action
-                    onClick={() => setSelectedTask(task)}
-                    className="d-flex justify-content-between align-items-center"
-                  >
-                    {task.title} (Due: {new Date(task.dueDate).toLocaleDateString()})
-                    <Button variant="success" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task); }}>
-                      Mark Complete
-                    </Button>
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
-
-              <Button variant="info" onClick={() => setShowCompletedTasks(!showCompletedTasks)} className="mb-3">
-                {showCompletedTasks ? 'Hide' : 'Show'} Completed Tasks
-              </Button>
-
-              {showCompletedTasks && (
-                <ListGroup>
-                  <h6>Completed Tasks</h6>
-                  {completedTasks.map(task => (
-                    <ListGroup.Item
-                      key={task.id}
-                      action
-                      onClick={() => setSelectedTask(task)}
-                      className="d-flex justify-content-between align-items-center text-muted"
-                    >
-                      <del>{task.title} (Due: {new Date(task.dueDate).toLocaleDateString()})</del>
-                      <Button variant="warning" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task); }}>
-                        Mark Incomplete
-                      </Button>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              )}
-            </>
-          ) : (
-            <p>Select a task list or create a new one.</p>
-          )}
+          <MainContent
+            tasks={tasks}
+            selectedTaskListId={selectedTaskListId}
+            selectedTask={selectedTask}
+            newTaskTitle={newTaskTitle}
+            newTaskDescription={newTaskDescription}
+            newTaskDueDate={newTaskDueDate}
+            setNewTaskTitle={setNewTaskTitle}
+            setNewTaskDescription={setNewTaskDescription}
+            setNewTaskDueDate={setNewTaskDueDate}
+            handleCreateTask={handleCreateTask}
+            handleToggleTaskComplete={handleToggleTaskComplete}
+            setSelectedTask={setSelectedTask}
+            showCompletedTasks={showCompletedTasks}
+            setShowCompletedTasks={setShowCompletedTasks}
+            showDeleteTaskModal={showDeleteTaskModal}
+            taskToDelete={taskToDelete}
+            confirmDeleteTask={confirmDeleteTask}
+            setShowDeleteTaskModal={setShowDeleteTaskModal}
+            taskLists={taskLists}
+          />
         </Col>
 
         {/* Right Sidebar */}
         {selectedTask && (
           <Col md={3} className="bg-light border-start p-3">
-            <h5>Task Details</h5>
-            <h6>{selectedTask.title}</h6>
-            <p><strong>Long Description:</strong> {selectedTask.description || 'N/A'}</p>
-            <p><strong>Due Date:</strong> {new Date(selectedTask.dueDate).toLocaleDateString()}</p>
-            <p><strong>Created At:</strong> {new Date(selectedTask.createdAt).toLocaleDateString()}</p>
-            <Button variant="danger" onClick={() => handleDeleteTask(selectedTask)}>
-              Delete Task
-            </Button>
+            <TaskDetailsSidebar
+              selectedTask={selectedTask}
+              handleDeleteTask={handleDeleteTask}
+            />
           </Col>
         )}
       </Row>
-
-      {/* Delete Task List Confirmation Modal */}
-      <Modal show={showDeleteTaskListModal} onHide={() => setShowDeleteTaskListModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete the task list "{taskListToDelete?.name}"? All associated tasks will also be deleted.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteTaskListModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDeleteTaskList}>
-            Delete List
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Delete Task Confirmation Modal */}
-      <Modal show={showDeleteTaskModal} onHide={() => setShowDeleteTaskModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete the task "{taskToDelete?.title}"?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteTaskModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDeleteTask}>
-            Delete Task
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </Container>
   );
 };
