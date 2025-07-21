@@ -65,3 +65,6 @@ The frontend application will typically run on `http://localhost:5173`.
 *   `frontend/`: React frontend application.
 *   `types/`: Shared TypeScript types and DTOs used by both frontend and backend.
 
+## Demo
+
+![Demo Screenshot](assets/demo.png)
