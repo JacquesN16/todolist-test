@@ -3,11 +3,10 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { SignupDto, LoginDto } from 'todolist-model';
-
-const API_BASE_URL = 'http://localhost:3000/auth'; // Replace with your backend URL
+import {AUTH_API} from "../helper/constant.ts";
 
 const loginUser = async (data: LoginDto) => {
-  const response = await fetch(`${API_BASE_URL}/login`, {
+  const response = await fetch(`${AUTH_API}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -22,7 +21,7 @@ const loginUser = async (data: LoginDto) => {
 };
 
 const signupUser = async (data: SignupDto) => {
-  const response = await fetch(`${API_BASE_URL}/signup`, {
+  const response = await fetch(`${AUTH_API}/signup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
