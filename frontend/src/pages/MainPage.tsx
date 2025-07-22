@@ -6,6 +6,7 @@ import { type TaskList, type Task } from 'todolist-model';
 import TaskListSidebar from '../components/TaskListSidebar';
 import MainContent from '../components/MainContent';
 import TaskDetailsSidebar from '../components/TaskDetailsSidebar';
+import {TASK_API} from "../helper/constant.ts";
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -50,7 +51,7 @@ const MainPage: React.FC = () => {
 
   const fetchTasks = async (listId: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/list/${listId}`, {
+      const response = await fetch(`${TASK_API}/list/${listId}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -143,7 +144,7 @@ const MainPage: React.FC = () => {
   const handleCreateTask = async () => {
     if (newTaskTitle.trim() && newTaskDueDate.trim() && selectedTaskListId) {
       try {
-        const response = await fetch(`${API_BASE_URL}/tasks`, {
+        const response = await fetch(`${TASK_API}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -177,7 +178,7 @@ const MainPage: React.FC = () => {
 
   const handleToggleTaskComplete = async (task: Task) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/tasks/${task.id}`, {
+      const response = await fetch(`${TASK_API}/${task.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +206,7 @@ const MainPage: React.FC = () => {
   const confirmDeleteTask = async () => {
     if (taskToDelete && selectedTaskListId) {
       try {
-        const response = await fetch(`${API_BASE_URL}/tasks/${taskToDelete.id}`, {
+        const response = await fetch(`${TASK_API}/${taskToDelete.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
