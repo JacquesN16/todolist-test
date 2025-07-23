@@ -1,6 +1,7 @@
 import React from 'react';
-import { Button, Form, ListGroup, InputGroup, Modal } from 'react-bootstrap';
+import { Button, Form, ListGroup, InputGroup } from 'react-bootstrap';
 import { type TaskList } from 'todolist-model';
+import ConfirmationModal from './ConfirmationModal';
 
 interface TaskListSidebarProps {
   taskLists: TaskList[];
@@ -66,23 +67,14 @@ const TaskListSidebar: React.FC<TaskListSidebarProps> = ({
         </Button>
       </div>
 
-      {/* Delete Task List Confirmation Modal */}
-      <Modal show={showDeleteTaskListModal} onHide={() => setShowDeleteTaskListModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete the task list "{taskListToDelete?.name}"? All associated tasks will also be deleted.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteTaskListModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDeleteTaskList}>
-            Delete List
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <ConfirmationModal
+        show={showDeleteTaskListModal}
+        onHide={() => setShowDeleteTaskListModal(false)}
+        onConfirm={confirmDeleteTaskList}
+        title="Confirm Deletion"
+        body={`Are you sure you want to delete the task list "${taskListToDelete?.name}"? All associated tasks will also be deleted.`}
+        confirmButtonText="Delete List"
+      />
     </>
   );
 };

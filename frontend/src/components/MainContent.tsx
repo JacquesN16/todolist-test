@@ -1,11 +1,14 @@
 import React from 'react';
-import { Button, Form, ListGroup, Modal } from 'react-bootstrap';
-import { type Task } from 'todolist-model';
+import { Button } from 'react-bootstrap';
+import { type Task, type TaskList } from 'todolist-model';
+import NewTaskForm from './NewTaskForm';
+import ActiveTasksList from './ActiveTasksList';
+import CompletedTasksList from './CompletedTasksList';
+import ConfirmationModal from './ConfirmationModal';
 
 interface MainContentProps {
   tasks: Task[];
   selectedTaskListId: number | null;
-  selectedTask: Task | null;
   newTaskTitle: string;
   newTaskDescription: string;
   newTaskDueDate: string;
@@ -21,7 +24,7 @@ interface MainContentProps {
   taskToDelete: Task | null;
   confirmDeleteTask: () => Promise<void>;
   setShowDeleteTaskModal: (show: boolean) => void;
-  taskLists: any[]; // Temporary, will be removed once task list name is passed directly
+  taskLists: TaskList[];
 }
 
 const MainContent: React.FC<MainContentProps> = ({
@@ -52,102 +55,47 @@ const MainContent: React.FC<MainContentProps> = ({
       {selectedTaskListId ? (
         <>
           <h5 className='text-white'>Tasks in {taskLists.find(list => list.id === selectedTaskListId)?.name} list</h5>
-          <Form className="mb-4">
-            <Form.Group className="mb-2">
-              <Form.Label>Short Description</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter short description"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-2">
-              <Form.Label>Long Description (Optional)</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Enter long description"
-                value={newTaskDescription}
-                onChange={(e) => setNewTaskDescription(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Due Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={newTaskDueDate}
-                onChange={(e) => setNewTaskDueDate(e.target.value)}
-                required
-              />
-            </Form.Group>
-            <Button variant="primary" onClick={handleCreateTask}>
-              Add Task
-            </Button>
-          </Form>
+          <NewTaskForm
+            newTaskTitle={newTaskTitle}
+            setNewTaskTitle={setNewTaskTitle}
+            newTaskDescription={newTaskDescription}
+            setNewTaskDescription={setNewTaskDescription}
+            newTaskDueDate={newTaskDueDate}
+            setNewTaskDueDate={setNewTaskDueDate}
+            handleCreateTask={handleCreateTask}
+          />
 
           <h6>Active Tasks</h6>
-          <ListGroup className="mb-3">
-            {activeTasks.map(task => (
-              <ListGroup.Item
-                key={task.id}
-                action
-                onClick={() => setSelectedTask(task)}
-                className="d-flex justify-content-between align-items-center"
-              >
-                {task.title} (Due: {new Date(task.dueDate).toLocaleDateString()})
-                <Button variant="success" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task); }}>
-                  Mark Complete ✅
-                </Button>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
+          <ActiveTasksList
+            tasks={activeTasks}
+            onTaskClick={setSelectedTask}
+            onToggleComplete={handleToggleTaskComplete}
+          />
 
           <Button variant="info" onClick={() => setShowCompletedTasks(!showCompletedTasks)} className="mb-3">
             {showCompletedTasks ? 'Hide' : 'Show'} Completed Tasks
           </Button>
 
           {showCompletedTasks && (
-            <ListGroup>
-              <h6>Completed Tasks</h6>
-              {completedTasks.map(task => (
-                <ListGroup.Item
-                  key={task.id}
-                  action
-                  onClick={() => setSelectedTask(task)}
-                  className="d-flex justify-content-between align-items-center text-muted"
-                >
-                  <del>{task.title} (Due: {new Date(task.dueDate).toLocaleDateString()})</del>
-                  <Button variant="warning" size="sm" onClick={(e) => { e.stopPropagation(); handleToggleTaskComplete(task); }}>
-                    Mark Incomplete ❌
-                  </Button>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
+            <CompletedTasksList
+              tasks={completedTasks}
+              onTaskClick={setSelectedTask}
+              onToggleComplete={handleToggleTaskComplete}
+            />
           )}
         </>
       ) : (
         <h2 className='text-white'>No task yet. Select a task list or create a new one.</h2>
       )}
 
-
-      <Modal show={showDeleteTaskModal} onHide={() => setShowDeleteTaskModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete the task "{taskToDelete?.title}"?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteTaskModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDeleteTask}>
-           🗑️ Delete Task
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <ConfirmationModal
+        show={showDeleteTaskModal}
+        onHide={() => setShowDeleteTaskModal(false)}
+        onConfirm={confirmDeleteTask}
+        title="Confirm Deletion"
+        body={`Are you sure you want to delete the task "${taskToDelete?.title}"?`}
+        confirmButtonText="🗑️ Delete Task"
+      />
     </>
   );
 };

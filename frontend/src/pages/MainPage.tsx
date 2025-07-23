@@ -1,232 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import { type TaskList, type Task } from 'todolist-model';
-
+import { useTaskLists } from '../hooks/useTaskLists';
+import { useTasks } from '../hooks/useTasks';
 import TaskListSidebar from '../components/TaskListSidebar';
 import MainContent from '../components/MainContent';
 import TaskDetailsSidebar from '../components/TaskDetailsSidebar';
-import {TASK_API} from "../helper/constant.ts";
-
-const API_BASE_URL = 'http://localhost:3000';
 
 const MainPage: React.FC = () => {
-  const [taskLists, setTaskLists] = useState<TaskList[]>([]);
-  const [selectedTaskListId, setSelectedTaskListId] = useState<number | null>(null);
-  const [newTaskListName, setNewTaskListName] = useState<string>('');
+  const { logout } = useAuth();
+  const {
+    taskLists,
+    selectedTaskListId,
+    newTaskListName,
+    showDeleteTaskListModal,
+    taskListToDelete,
+    setNewTaskListName,
+    handleCreateTaskList,
+    handleDeleteTaskList,
+    setSelectedTaskListId,
+    confirmDeleteTaskList,
+    setShowDeleteTaskListModal,
+  } = useTaskLists();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-  const [newTaskDescription, setNewTaskDescription] = useState<string>('');
-  const [newTaskDueDate, setNewTaskDueDate] = useState<string>('');
+  const {
+    tasks,
+    selectedTask,
+    newTaskTitle,
+    newTaskDescription,
+    newTaskDueDate,
+    showDeleteTaskModal: showDeleteTaskModalForTask,
+    taskToDelete: taskToDeleteForTask,
+    showCompletedTasks,
+    setNewTaskTitle,
+    setNewTaskDescription,
+    setNewTaskDueDate,
+    handleCreateTask,
+    handleToggleTaskComplete,
+    setSelectedTask,
+    setShowCompletedTasks,
+    handleDeleteTask,
+    confirmDeleteTask: confirmDeleteTaskForTask,
+    setShowDeleteTaskModal: setShowDeleteTaskModalForTask,
+  } = useTasks(selectedTaskListId);
 
-  const [showDeleteTaskListModal, setShowDeleteTaskListModal] = useState<boolean>(false);
-  const [taskListToDelete, setTaskListToDelete] = useState<TaskList | null>(null);
-  const [showDeleteTaskModal, setShowDeleteTaskModal] = useState<boolean>(false);
-  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-  const [showCompletedTasks, setShowCompletedTasks] = useState<boolean>(false);
-
-  const { accessToken, logout } = useAuth();
-
-  const fetchTaskLists = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/task-lists`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch task lists');
-      }
-      const data: TaskList[] = await response.json();
-      setTaskLists(data);
-      if (data.length > 0 && !selectedTaskListId) {
-        setSelectedTaskListId(data[0].id);
-      }
-    } catch (error) {
-      console.error('Error fetching task lists:', error);
-    }
-  };
-
-  const fetchTasks = async (listId: number) => {
-    try {
-      const response = await fetch(`${TASK_API}/list/${listId}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
-      }
-      const data: Task[] = await response.json();
-      setTasks(data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (accessToken) {
-      fetchTaskLists();
-    }
-  }, [accessToken]);
-
-  useEffect(() => {
-    setSelectedTask(null)
-    if (selectedTaskListId) {
-      fetchTasks(selectedTaskListId);
-    } else {
-      setTasks([]);
-    }
-  }, [selectedTaskListId]);
-
-  const handleCreateTaskList = async () => {
-    if (newTaskListName.trim()) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/task-lists`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ name: newTaskListName.trim() }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create task list');
-        }
-        setNewTaskListName('');
-        fetchTaskLists();
-      } catch (error) {
-        console.error('Error creating task list:', error);
-        if(error){
-          alert(`${error?.message}  Please try again.`);
-        }
-
-      }
-    } else {
-      alert('Task list name cannot be empty.');
-    }
-  };
-
-  const handleDeleteTaskList = (list: TaskList) => {
-    setTaskListToDelete(list);
-    setShowDeleteTaskListModal(true);
-  };
-
-  const confirmDeleteTaskList = async () => {
-    if (taskListToDelete) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/task-lists/${taskListToDelete.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error('Failed to delete task list');
-        }
-        setShowDeleteTaskListModal(false);
-        setTaskListToDelete(null);
-        setSelectedTaskListId(null);
-        fetchTaskLists();
-      } catch (error) {
-        console.error('Error deleting task list:', error);
-        if(error){
-          alert(`${error.message}. Please try again.`);
-        }
-
-      }
-    }
-  };
-
-  const handleCreateTask = async () => {
-    if (newTaskTitle.trim() && newTaskDueDate.trim() && selectedTaskListId) {
-      try {
-        const response = await fetch(`${TASK_API}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            title: newTaskTitle.trim(),
-            description: newTaskDescription.trim() || undefined,
-            dueDate: newTaskDueDate.trim(),
-            listId: selectedTaskListId,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to create task');
-        }
-        setNewTaskTitle('');
-        setNewTaskDescription('');
-        setNewTaskDueDate('');
-        fetchTasks(selectedTaskListId); // Refresh tasks for the current list
-      } catch (error) {
-        console.error('Error creating task:', error);
-        if(error){
-          alert(`${error.message}. Please try again.`);
-        }
-
-      }
-    } else {
-      alert('Short description, due date, and a selected task list are required for a new task.');
-    }
-  };
-
-  const handleToggleTaskComplete = async (task: Task) => {
-    try {
-      const response = await fetch(`${TASK_API}/${task.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ completed: !task.completed }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to update task status');
-      }
-      fetchTasks(selectedTaskListId!); // Refresh tasks
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      if(error){
-        alert(`${error.message}. Please try again.`);
-      }
-    }
-  };
-
-  const handleDeleteTask = (task: Task) => {
-    setTaskToDelete(task);
-    setShowDeleteTaskModal(true);
-  };
-
-  const confirmDeleteTask = async () => {
-    if (taskToDelete && selectedTaskListId) {
-      try {
-        const response = await fetch(`${TASK_API}/${taskToDelete.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error('Failed to delete task');
-        }
-        setShowDeleteTaskModal(false);
-        setTaskToDelete(null);
-        setSelectedTask(null); // Deselect the deleted task
-        fetchTasks(selectedTaskListId); // Refresh tasks
-      } catch (error) {
-        console.error('Error deleting task:', error);
-        if(error){
-          alert(`${error.message}. Please try again.`);
-        }
-      }
-    }
-  };
 
   return (
     <Container fluid className="h-100">
@@ -254,7 +71,6 @@ const MainPage: React.FC = () => {
           <MainContent
             tasks={tasks}
             selectedTaskListId={selectedTaskListId}
-            selectedTask={selectedTask}
             newTaskTitle={newTaskTitle}
             newTaskDescription={newTaskDescription}
             newTaskDueDate={newTaskDueDate}
@@ -266,10 +82,10 @@ const MainPage: React.FC = () => {
             setSelectedTask={setSelectedTask}
             showCompletedTasks={showCompletedTasks}
             setShowCompletedTasks={setShowCompletedTasks}
-            showDeleteTaskModal={showDeleteTaskModal}
-            taskToDelete={taskToDelete}
-            confirmDeleteTask={confirmDeleteTask}
-            setShowDeleteTaskModal={setShowDeleteTaskModal}
+            showDeleteTaskModal={showDeleteTaskModalForTask}
+            taskToDelete={taskToDeleteForTask}
+            confirmDeleteTask={confirmDeleteTaskForTask}
+            setShowDeleteTaskModal={setShowDeleteTaskModalForTask}
             taskLists={taskLists}
           />
         </Col>

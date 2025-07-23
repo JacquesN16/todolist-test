@@ -1,40 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { SignupDto, LoginDto } from 'todolist-model';
-import {AUTH_API} from "../helper/constant.ts";
 import FormControlGroup from '../components/FormControlGroup';
-
-const loginUser = async (data: LoginDto) => {
-  const response = await fetch(`${AUTH_API}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Login failed');
-  }
-  return response.json();
-};
-
-const signupUser = async (data: SignupDto) => {
-  const response = await fetch(`${AUTH_API}/signup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Signup failed');
-  }
-  return response.json();
-};
+import { useAuthApi } from '../hooks/useAuthApi';
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -44,51 +11,20 @@ const AuthPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
+  const { error, success, handleLogin, handleSignup, setError } = useAuthApi();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     if (isLogin) {
-      try {
-        const data = await loginUser({ email, password });
-        setSuccess('Login successful!');
-        setError(null);
-        console.log('Login successful', data);
-        login(data.accessToken);
-        navigate('/main');
-      } catch (err: any) {
-        setError(err.message);
-        setSuccess(null);
-      }
+      handleLogin({ email, password });
     } else {
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
       if (email !== confirmEmail) {
         setError('Emails do not match');
         return;
       }
-      try {
-        const data = await signupUser({ firstName, lastName, email, password, confirmPassword });
-        setSuccess('Signup successful! You can now log in.');
-        setError(null);
-        console.log('Signup successful', data);
-        login(data.accessToken);
-        setIsLogin(true); // Switch to login form after successful signup
-        navigate('/main');
-      } catch (err: any) {
-        setError(err.message);
-        setSuccess(null);
-      }
+      handleSignup({ firstName, lastName, email, password, confirmPassword });
     }
   };
 
